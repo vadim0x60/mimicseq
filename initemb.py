@@ -12,6 +12,8 @@ def embed_events(labels):
     return torch.Tensor([datum['embedding'] for datum in data])
 
 def init_embedding(legend, batch_size=100):
+    event_type_count = len(legend)
+    max_event_id = legend['event_id'].max() 
     labels = legend['label'].tolist()
 
     try:
@@ -29,8 +31,8 @@ def init_embedding(legend, batch_size=100):
     # Trying to prevent off-by-one errors (wish me luck)
     # initial_embedding[0] is the embedding for the [MASK] token
     # initial_embedding[event_id] is the embedding for the event with that id
-    assert len(initial_embedding) == len(legend) + 1
-    assert len(initial_embedding) == legend['event_id'].max()
+    assert len(initial_embedding) == event_type_count + 1
+    assert len(initial_embedding) == max_event_id
 
     return initial_embedding
 

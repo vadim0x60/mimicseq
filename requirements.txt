@@ -1,0 +1,7 @@
+google-cloud-bigquery~=3.9
+openai~=0.27
+db-dtypes~=1.1
+diskcache~=5.6
+wandb~=0.13
+positional-encodings[pytorch]~=6.0
+tenacity~=8.0

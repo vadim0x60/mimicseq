@@ -3,7 +3,7 @@ import pandas as pd
 
 legend = pd.DataFrame({
     'label': ['a', 'b', 'c', 'd'],
-    'intensity': [1, 1, 1, 1],
+    'avg_intensity': [1, 1, 1, 1],
     'event_id': [1, 2, 3, 4]
 })
 patients = [

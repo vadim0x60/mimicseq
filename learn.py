@@ -1,7 +1,7 @@
 from model import TimeSeriesTransformer
 from data import load_mimicseq
 import torch
-import pytorch_lightning as pl
+import lightning as L
 from initemb import init_embedding
 import click
 from mock import load_mockseq
@@ -16,11 +16,12 @@ def train_icat(real_data):
         legend, train_data, test_data = load_mockseq()
         initial_embedding = torch.eye(len(legend) + 1)
 
-    intensity_weights = 1 / torch.Tensor(legend['avg_intensity'].tolist())
+    # the first intensity is for the [MASK] token
+    intensity_weights = 1 / torch.Tensor([1] + legend['avg_intensity'].tolist())
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
     model = TimeSeriesTransformer(initial_embedding * intensity_weights, num_layers=4)
-    trainer = pl.Trainer(limit_train_batches=100, max_epochs=1)
+    trainer = L.Trainer(limit_train_batches=100, max_epochs=1)
     trainer.fit(model=model, train_dataloaders=train_loader)
 
 if __name__ == '__main__':

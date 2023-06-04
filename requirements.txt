@@ -6,3 +6,4 @@ wandb~=0.13
 positional-encodings[pytorch]~=6.0
 tenacity~=8.0
 click~=8.1
+lightning~=2.0

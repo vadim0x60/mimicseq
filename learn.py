@@ -20,7 +20,7 @@ def train_icat(real_data):
     intensity_weights = 1 / torch.Tensor([1] + legend['avg_intensity'].tolist())
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
-    model = TimeSeriesTransformer(initial_embedding * intensity_weights.unsqueeze(1), n_layers=1)
+    model = TimeSeriesTransformer(initial_embedding * intensity_weights.unsqueeze(1), n_heads=1, n_layers=3, dim_feedwordard=16)
     trainer = L.Trainer(limit_train_batches=100, max_epochs=1)
     trainer.fit(model=model, train_dataloaders=train_loader)
 

@@ -15,8 +15,6 @@ class TimeSeriesTransformer(L.LightningModule):
         super().__init__()
 
         event_dim = token_matrix.shape[1]
-        print(event_dim)
-        print(token_matrix.shape)
 
         self.embed = torch.nn.Embedding.from_pretrained(token_matrix)
         encoder_layer = torch.nn.TransformerEncoderLayer(
@@ -28,6 +26,7 @@ class TimeSeriesTransformer(L.LightningModule):
         self.transformer = torch.nn.TransformerEncoder(encoder_layer=encoder_layer, 
                                                        num_layers=n_layers)
         self.pos = PositionalEncoding1D(event_dim)
+        self.loss_f = torch.nn.MSELoss()
 
     def forward(self, masked_events):
         masked_events *= torch.sqrt(torch.tensor(self.embed.weight.shape[1]))
@@ -40,14 +39,12 @@ class TimeSeriesTransformer(L.LightningModule):
     
     def training_step(self, batch, batch_idx):
         events, intensities = batch
-        intensities = intensities.clone()
-        embeddings = self.embed(events)
-        mask_idx = random.randint(0, len(intensities) - 1)
-        intensities[mask_idx] = 1
-        embeddings[mask_idx] = self.embed(MASK_TOKEN)
-        embeddings *= intensities
-        embeddings_pred = self(embeddings)
-        loss = torch.nn.functional.mse_loss(embeddings_pred, events)
+        embeddings = self.embed(events) * intensities
+        mask_idx = random.randint(0, intensities.shape[1] - 1)
+        masked_embeddings = embeddings.clone()
+        masked_embeddings[:,mask_idx] = self.embed(MASK_TOKEN)
+        embeddings_pred = self(masked_embeddings)
+        loss = self.loss_f(embeddings_pred, embeddings)
         self.log('train_loss', loss)
         return loss
 

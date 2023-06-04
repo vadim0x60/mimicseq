@@ -1,5 +1,4 @@
 from google.cloud import bigquery
-from string import Template
 from torch.utils.data import Dataset
 
 client = bigquery.Client(project='graphsim')

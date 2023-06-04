@@ -16,7 +16,7 @@ def train_icat(real_data):
         legend, train_data, test_data = load_mockseq()
         initial_embedding = torch.eye(len(legend) + 1)
 
-    intensity_weights = 1 / torch.Tensor(legend['intensity'].tolist())
+    intensity_weights = 1 / torch.Tensor(legend['avg_intensity'].tolist())
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
     model = TimeSeriesTransformer(initial_embedding * intensity_weights, num_layers=4)

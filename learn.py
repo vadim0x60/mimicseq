@@ -10,17 +10,17 @@ from mock import load_mockseq
 @click.option('--real-data/--mock-data', default=True)
 def train_icat(real_data):
     if real_data:
-        legend, train_data, test_data = load_mimicseq()
+        legend, train_data, test_data = load_mimicseq(torch.LongTensor, torch.Tensor)
         initial_embedding = init_embedding(legend)
     else:
-        legend, train_data, test_data = load_mockseq()
-        initial_embedding = torch.eye(len(legend) + 1)
+        legend, train_data, test_data = load_mockseq(torch.LongTensor, torch.Tensor)
+        initial_embedding = torch.rand(5, 1536)
 
     # the first intensity is for the [MASK] token
     intensity_weights = 1 / torch.Tensor([1] + legend['avg_intensity'].tolist())
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
-    model = TimeSeriesTransformer(initial_embedding * intensity_weights, num_layers=4)
+    model = TimeSeriesTransformer(initial_embedding * intensity_weights.unsqueeze(1), n_layers=1)
     trainer = L.Trainer(limit_train_batches=100, max_epochs=1)
     trainer.fit(model=model, train_dataloaders=train_loader)
 

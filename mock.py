@@ -14,23 +14,28 @@ patients = [
 ]
 
 class MOCKSEQ(Dataset):
-    def __init__(self, start_idx, end_idx):
+    def __init__(self, start_idx, end_idx, 
+                 id_transform=lambda x: x,
+                 intensity_transform=lambda x: x):
         self.start_idx = start_idx
         self.end_idx = end_idx
+        self.id_transform = id_transform
+        self.intensity_transform = intensity_transform
 
     def __getitem__(self, index):
-        return patients[self.start_idx + index], 1
+        return self.id_transform(patients[self.start_idx + index]), self.intensity_transform(1)
 
     def __len__(self):
         return self.end_idx - self.start_idx
 
-def load_fold(fold):
+def load_fold(fold, *args, **kwargs):
     if fold == 'train':
-        return MOCKSEQ(0, 3)
+        return MOCKSEQ(0, 3, *args, **kwargs)
     elif fold == 'test':
-        return MOCKSEQ(3, 4)
+        return MOCKSEQ(3, 4, *args, **kwargs)
 
-def load_mockseq():
-    train_data = load_fold('train')
-    test_data = load_fold('test')
+def load_mockseq(id_transform=lambda x: x,
+                 intensity_transform=lambda x: x):
+    train_data = load_fold('train', id_transform, intensity_transform)
+    test_data = load_fold('test', id_transform, intensity_transform)
     return legend, train_data, test_data

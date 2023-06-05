@@ -5,6 +5,7 @@ from positional_encodings.torch_encodings import PositionalEncoding1D
 from eval import eval_event_pred, eval_intensity_pred
 
 MASK_TOKEN = torch.LongTensor([0])
+SMOOTHING = 0.95
 
 def mle(event_dist, intensities):
     """
@@ -56,6 +57,9 @@ class TimeSeriesTransformer(L.LightningModule):
         self.pos = PositionalEncoding1D(event_dim)
         self.loss_f = torch.nn.MSELoss()
 
+        self.smoothed_event_eval_hard = 0
+        self.smoothed_event_eval_soft = 0
+
     def forward(self, masked_events):
         masked_events *= torch.sqrt(torch.tensor(self.embed.weight.shape[1]))
         masked_events += self.pos(masked_events)
@@ -105,8 +109,12 @@ class TimeSeriesTransformer(L.LightningModule):
             event_dist, intensity_proj = self.unembed(embeddings_pred[:,-1])
             next_event, next_intensity = mle(event_dist, intensity_proj)
             event_eval_hard, event_eval_soft = eval_event_pred(event_tail.numpy(), next_event.numpy())
+            self.smoothed_event_eval_hard = SMOOTHING * self.smoothed_event_eval_hard + (1 - SMOOTHING) * event_eval_hard
+            self.smoothed_event_eval_soft = SMOOTHING * self.smoothed_event_eval_soft + (1 - SMOOTHING) * event_eval_soft
             self.log('event_eval_hard', event_eval_hard)
             self.log('event_eval_soft', event_eval_soft)
+            self.log('smoothed_event_eval_hard', self.smoothed_event_eval_hard)
+            self.log('smoothed_event_eval_soft', self.smoothed_event_eval_soft)
             in_eval = eval_intensity_pred(event_tail, intensity_tail, intensity_proj)
             self.log('intensity_eval', in_eval)
 

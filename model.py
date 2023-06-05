@@ -16,7 +16,8 @@ class TimeSeriesTransformer(L.LightningModule):
 
         event_dim = token_matrix.shape[1]
 
-        self.embed = torch.nn.Embedding.from_pretrained(token_matrix)
+        self.embed = torch.nn.Embedding.from_pretrained(token_matrix, 
+                                                        freeze=False)
         encoder_layer = torch.nn.TransformerEncoderLayer(
                                             d_model=event_dim,
                                             nhead=n_heads, 

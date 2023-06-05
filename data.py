@@ -5,20 +5,20 @@ client = bigquery.Client(project='graphsim')
 
 class MIMICSEQ(Dataset):
     def __init__(self, hadm_ids, 
-                 id_transform=lambda x: x,
-                 intensity_transform=lambda x: x):
+                 transform=lambda x: x):
         self.hadm_ids = hadm_ids
-        self.id_transform = id_transform
-        self.intensity_transform = intensity_transform
+        self.transform = transform
 
     def __getitem__(self, index):
         hadm_id = self.hadm_ids[index]
         q = 'SELECT label, intensity FROM `graphsim.mimic.events` WHERE hadm_id = ' 
         q += str(hadm_id) + ' ORDER BY eventtime'
         history = client.query(q).to_dataframe()
-        event_ids = self.id_transform(history['event_id'].tolist())
-        intensities = self.intensity_transform(history['intensity'].tolist())
-        return event_ids, intensities
+        
+        event_ids = history['event_id'].tolist()
+        intensities = history['intensity'].tolist()
+
+        return self.transform(event_ids, intensities)
 
     def __len__(self):
         return len(self.hadm_ids)
@@ -28,11 +28,12 @@ def load_fold(fold, *args, **kwargs):
     hadm_ids = hadm_ids.to_dataframe()['hadm_id'].tolist()
     return MIMICSEQ(hadm_ids, *args, **kwargs)
 
-def load_mimicseq(id_transform=lambda x: x,
-                  intensity_transform=lambda x: x):
-    # Initialize the BigQuery client
-    client = bigquery.Client(project='graphsim')
-    legend = client.query('SELECT * FROM graphsim.mimic.eventtypes').to_dataframe()
-    train_data = load_fold('train', id_transform, intensity_transform)
-    test_data = load_fold('test', id_transform, intensity_transform)
-    return legend, train_data, test_data
+def load_train(transform=lambda x: x):
+    return load_fold('train', transform)
+
+def load_test(transform=lambda x: x):
+    return load_fold('test', transform)
+
+def load_legend():
+    q = 'SELECT * FROM graphsim.mimic.eventtypes ORDER BY event_id'
+    return client.query(q).to_dataframe()

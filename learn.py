@@ -21,7 +21,7 @@ def train_icat(real_data, accelerator):
         from initemb import embed
     else:
         dataset = mock
-        embed = lambda legend: torch.rand(len(legend['label']) + 1, DIM)
+        embed = lambda legend, dim: torch.rand(len(legend['label']) + 1, dim)
 
     legend = dataset.load_legend()
 
@@ -33,7 +33,7 @@ def train_icat(real_data, accelerator):
     train_data = dataset.load_train(transf)
     test_data = dataset.load_test(transf)
 
-    initial_embedding = torch.Tensor(embed(legend))
+    initial_embedding = torch.Tensor(embed(legend, dim=DIM))
     initial_embedding = embedding_transform(intensity_stds)(initial_embedding)
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)

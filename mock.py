@@ -8,10 +8,6 @@ legend = pd.DataFrame({
     'event_id': [1, 2, 3, 4]
 })
 patients = [
-    [1],
-    [2],
-    [3],
-    [4],
     [1, 2],
     [2, 3],
     [3, 4],
@@ -33,17 +29,11 @@ class MOCKSEQ(Dataset):
     def __len__(self):
         return self.end_idx - self.start_idx
 
-def load_fold(fold, *args, **kwargs):
-    if fold == 'train':
-        return MOCKSEQ(0, 9, *args, **kwargs)
-    elif fold == 'test':
-        return MOCKSEQ(9, 10, *args, **kwargs)
-    
 def load_train(transform=lambda x: x):
-    return MOCKSEQ(0, 9, transform)
+    return MOCKSEQ(0, 5, transform)
 
 def load_test(transform=lambda x: x):
-    return MOCKSEQ(9, 10, transform)
+    return MOCKSEQ(5, 6, transform)
 
 def load_legend():
     return legend

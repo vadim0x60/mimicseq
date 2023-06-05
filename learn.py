@@ -1,7 +1,7 @@
 from model import TimeSeriesTransformer, embedding_transform, patient_transform
 import torch
 import lightning as L
-from lightning.pytorch.callbacks.early_stopping import EarlyStopping
+from evestop.lightningcb import EVEEarlyStopping
 from pytorch_lightning import loggers
 import click
 
@@ -45,11 +45,9 @@ def train_icat(real_data, accelerator):
                                   n_layers=N_LAYERS, 
                                   dim_feedwordard=DIM_FEEDFORWARD)
     
-    es = EarlyStopping(monitor='val_loss')
+    es = EVEEarlyStopping(monitor='val_loss')
 
-    trainer = L.Trainer(limit_train_batches=100, 
-                        max_epochs=10, 
-                        accelerator=accelerator,
+    trainer = L.Trainer(accelerator=accelerator,
                         logger=loggers.WandbLogger(project='icat'),
                         log_every_n_steps=1,
                         callbacks=[es],

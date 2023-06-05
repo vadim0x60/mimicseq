@@ -1,5 +1,6 @@
-import torch
+import numpy as np
 import openai
+from sklearn.decomposition import PCA
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 @retry(wait=wait_random_exponential(), stop=stop_after_attempt(6))
@@ -9,34 +10,46 @@ def embed_events(labels):
         input=labels
     )['data']
 
-    return torch.Tensor([datum['embedding'] for datum in data])
+    return np.array([datum['embedding'] for datum in data])
 
-def init_embedding(legend, batch_size=100):
+def openai_embed(legend, batch_size=100):
     event_type_count = len(legend)
     max_event_id = legend['event_id'].max() 
     labels = legend['label'].tolist()
 
     try:
-        initial_embedding = torch.load('initial_embedding.pt')
+        embedding = np.load('initial_embedding.npy')
     except FileNotFoundError:
-        initial_embedding = torch.Tensor(embed_events(['[MASK]']))
+        embedding = embed_events(['[MASK]'])
 
-    del labels[:len(initial_embedding)-1]
+    del labels[:len(embedding)-1]
 
     while labels:
-        initial_embedding = torch.vstack((initial_embedding, embed_events(labels[:batch_size])))
+        embedding = np.vstack((embedding, embed_events(labels[:batch_size])))
         del labels[:batch_size]
-        torch.save(initial_embedding, 'initial_embedding.pt')
+        np.save('initial_embedding.npy', embedding)
 
     # Trying to prevent off-by-one errors (wish me luck)
-    # initial_embedding[0] is the embedding for the [MASK] token
-    # initial_embedding[event_id] is the embedding for the event with that id
-    assert len(initial_embedding) == event_type_count + 1
-    assert len(initial_embedding) == max_event_id
+    # embedding[0] is the embedding for the [MASK] token
+    # embedding[event_id] is the embedding for the event with that id
+    assert len(embedding) == event_type_count + 1
+    assert len(embedding) == max_event_id
 
-    return initial_embedding
+    return embedding
+
+def embed(legend, dim=16, batch_size=100):
+    try:
+        embedding = np.load('embedding.npy')
+        assert embedding.shape[0] == len(legend) + 1
+        assert embedding.shape[1] == dim
+    except (FileNotFoundError, AssertionError):
+        initial_embedding = openai_embed(legend, batch_size)
+        pca = PCA(n_components=dim)
+        embedding = pca.fit_transform(initial_embedding)
+        np.save('embedding.npy', embedding)
+        return embedding
 
 if __name__ == '__main__':
     from data import load_mimicseq
     legend, train_data, test_data = load_mimicseq()
-    init_embedding(legend)
+    embed(legend)

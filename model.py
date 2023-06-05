@@ -2,7 +2,7 @@ import lightning as L
 import torch
 import random
 from positional_encodings.torch_encodings import PositionalEncoding1D
-from eval import event_accuracy
+from eval import eval_event_pred, eval_intensity_pred
 
 MASK_TOKEN = torch.LongTensor([0])
 
@@ -104,9 +104,11 @@ class TimeSeriesTransformer(L.LightningModule):
         if mode == 'val':
             event_dist, intensity_proj = self.unembed(embeddings_pred[:,-1])
             next_event, next_intensity = mle(event_dist, intensity_proj)
-            hard_acc, soft_acc = event_accuracy(event_tail.numpy(), next_event.numpy())
-            self.log('hard_acc', hard_acc)
-            self.log('soft_acc', soft_acc)
+            event_eval_hard, event_eval_soft = eval_event_pred(event_tail.numpy(), next_event.numpy())
+            self.log('event_eval_hard', event_eval_hard)
+            self.log('event_eval_soft', event_eval_soft)
+            in_eval = eval_intensity_pred(event_tail, intensity_tail, intensity_proj)
+            self.log('intensity_eval', in_eval)
 
         return self.loss_f(embeddings_pred, embeddings)
     

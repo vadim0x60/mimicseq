@@ -52,7 +52,8 @@ def train_icat(real_data, accelerator):
                         accelerator=accelerator,
                         logger=loggers.WandbLogger(project='icat'),
                         log_every_n_steps=1,
-                        callbacks=[es])
+                        callbacks=[es],
+                        precision=16)
     
     trainer.fit(model=model, 
                 train_dataloaders=train_loader, 

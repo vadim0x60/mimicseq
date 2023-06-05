@@ -2,6 +2,7 @@ from model import TimeSeriesTransformer
 from data import load_mimicseq
 import torch
 import lightning as L
+from pytorch_lightning import loggers
 from initemb import embed
 import click
 from mock import load_mockseq
@@ -13,7 +14,8 @@ DIM_FEEDFORWARD = 15
 
 @click.command()
 @click.option('--real-data/--mock-data', default=True)
-def train_icat(real_data):
+@click.option('--accelerator', default='auto')
+def train_icat(real_data, accelerator):
     if real_data:
         legend, train_data, test_data = load_mimicseq(torch.LongTensor, torch.Tensor)
         initial_embedding = torch.Tensor(embed(legend))
@@ -27,7 +29,11 @@ def train_icat(real_data):
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
     model = TimeSeriesTransformer(initial_embedding * intensity_weights.unsqueeze(1), 
                                   n_heads=N_HEADS, n_layers=N_LAYERS, dim_feedwordard=DIM_FEEDFORWARD)
-    trainer = L.Trainer(limit_train_batches=100, max_epochs=1)
+    trainer = L.Trainer(limit_train_batches=100, 
+                        max_epochs=10, 
+                        accelerator=accelerator,
+                        logger=loggers.WandbLogger(project='icat'),
+                        log_every_n_steps=1)
     trainer.fit(model=model, train_dataloaders=train_loader)
 
 if __name__ == '__main__':

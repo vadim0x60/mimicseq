@@ -1,3 +1,5 @@
 __pycache__
 .config
 lightning_logs
+wandb
+icat

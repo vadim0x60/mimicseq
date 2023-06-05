@@ -15,6 +15,8 @@ def embed_events(labels):
 def openai_embed(legend, batch_size=100):
     event_type_count = len(legend)
     max_event_id = legend['event_id'].max() 
+    assert event_type_count == max_event_id
+
     labels = legend['label'].tolist()
 
     try:
@@ -33,7 +35,6 @@ def openai_embed(legend, batch_size=100):
     # embedding[0] is the embedding for the [MASK] token
     # embedding[event_id] is the embedding for the event with that id
     assert len(embedding) == event_type_count + 1
-    assert len(embedding) == max_event_id
 
     return embedding
 

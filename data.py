@@ -11,7 +11,7 @@ class MIMICSEQ(Dataset):
 
     def __getitem__(self, index):
         hadm_id = self.hadm_ids[index]
-        q = 'SELECT label, intensity FROM `graphsim.mimic.events` WHERE hadm_id = ' 
+        q = 'SELECT event_id, intensity FROM `graphsim.mimic.events` WHERE hadm_id = ' 
         q += str(hadm_id) + ' ORDER BY eventtime'
         history = client.query(q).to_dataframe()
         

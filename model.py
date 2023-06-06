@@ -16,22 +16,21 @@ def mle(event_dist, intensities):
     top = event_dist.argmin(dim=-1)
     return top, intensities[:,top]
 
-def embedding_transform(intensity_stds):
+def embedding_transform(avg_intensities):
+    avg_intensities = torch.FloatTensor(avg_intensities)
+    avg_intensities = avg_intensities.nan_to_num(1)
+
     def transform(embeddings):
         embeddings = torch.FloatTensor(embeddings)
-        stds = torch.FloatTensor(intensity_stds)
-        return embeddings / stds.unsqueeze(1)
+        means = torch.FloatTensor(avg_intensities)
+        return embeddings / means.unsqueeze(1)
     return transform
 
-def patient_transform(avg_intensities):
-    avg_intensities = torch.FloatTensor(avg_intensities)
-
-    def transform(events, intensities):
-        events = torch.LongTensor(events)
-        intensities = torch.FloatTensor(intensities)
-        avgs = avg_intensities[events]
-        return events, intensities - avgs
-    return transform
+def patient_transform(events, intensities):
+    events = torch.LongTensor(events)
+    intensities = torch.FloatTensor(intensities)
+    intensities = intensities.nan_to_num(1)
+    return events, intensities
 
 class TimeSeriesTransformer(L.LightningModule):
     def __init__(self, token_matrix,
@@ -61,9 +60,11 @@ class TimeSeriesTransformer(L.LightningModule):
         self.smoothed_event_eval_soft = 0
 
     def forward(self, masked_events):
+        print(masked_events.isnan().sum())
         masked_events *= torch.sqrt(torch.tensor(self.embed.weight.shape[1]))
         masked_events += self.pos(masked_events)
         events = self.transformer(masked_events)
+        print(events.isnan().sum())
         return events
     
     def configure_optimizers(self):
@@ -72,7 +73,7 @@ class TimeSeriesTransformer(L.LightningModule):
     def unembed(self, token_vector):
         emb_norm = self.embed.weight / self.embed.weight.norm(dim=-1).unsqueeze(-1)
         proj_intensity = token_vector @ self.embed.weight.T
-        event_dist = (token_vector.unsqueeze(-2) - proj_intensity.unsqueeze(-1) * emb_norm.unsqueeze(-3)).norm(dim=-1)
+        event_dist = (token_vector.unsqueeze(-2) - proj_intensity.unsqueeze(-1) * emb_norm.unsqueeze(-3)).norm(dim=-1) * proj_intensity.sign()
         return event_dist, proj_intensity
 
     def predict(self, events, intensities):
@@ -91,18 +92,27 @@ class TimeSeriesTransformer(L.LightningModule):
         mode: 'train' or 'val'
         """
 
+        print(events.isnan().sum())
+        print(intensities.isnan().sum())
+
         mask_idx = random.randint(0, intensities.shape[1] - 1)
 
         if mode == 'val':
+            print(events)
+            print(intensities)
             event_tail = events[:,mask_idx:]
             intensity_tail = intensities[:,mask_idx:]
+            print(event_tail)
+            print(intensity_tail)
 
             events = events[:,:mask_idx+1]
             intensities = intensities[:,:mask_idx+1]
 
         embeddings = self.embed(events) * intensities.unsqueeze(-1)
+        print(embeddings.isnan().sum())
         masked_embeddings = embeddings.clone()
         masked_embeddings[:,mask_idx] = self.embed(MASK_TOKEN)
+        print(masked_embeddings.isnan().sum())
         embeddings_pred = self(masked_embeddings)
 
         if mode == 'val':

@@ -29,12 +29,11 @@ def train_icat(real_data, accelerator):
     intensity_means = [1] + legend['intensity_mean'].tolist()
     intensity_stds = torch.Tensor([1] + legend['intensity_std'].tolist())
 
-    transf = patient_transform(intensity_means)
-    train_data = dataset.load_train(transf)
-    test_data = dataset.load_test(transf)
+    train_data = dataset.load_train(patient_transform)
+    test_data = dataset.load_test(patient_transform)
 
     initial_embedding = torch.Tensor(embed(legend, dim=DIM))
-    initial_embedding = embedding_transform(intensity_stds)(initial_embedding)
+    initial_embedding = embedding_transform(intensity_means)(initial_embedding)
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
@@ -45,9 +44,9 @@ def train_icat(real_data, accelerator):
                                   dim_feedwordard=DIM_FEEDFORWARD)
 
     trainer = L.Trainer(accelerator=accelerator,
-                        logger=loggers.WandbLogger(project='icat', log_model=True),
                         log_every_n_steps=1,
-                        precision='bf16-mixed')
+                        gradient_clip_val=1,
+                        logger=loggers.WandbLogger(project='icat', log_model=True))
     
     trainer.fit(model=model, 
                 train_dataloaders=train_loader, 

@@ -5,7 +5,6 @@ from positional_encodings.torch_encodings import PositionalEncoding1D
 from eval import eval_event_pred, eval_intensity_pred
 
 MASK_TOKEN = torch.LongTensor([0])
-SMOOTHING = 0.95
 
 def mle(event_dist, intensities):
     """
@@ -39,7 +38,7 @@ class TimeSeriesTransformer(L.LightningModule):
     def __init__(self, token_matrix,
                  n_heads=8,
                  n_layers=8, 
-                 dropout=0.1, 
+                 dropout=0.0, 
                  dim_feedwordard=2048, 
                  layer_norm_eps=0.0001,
                  lr=1e-3,) -> None:
@@ -60,9 +59,6 @@ class TimeSeriesTransformer(L.LightningModule):
                                                        num_layers=n_layers)
         self.pos = PositionalEncoding1D(event_dim)
         self.loss_f = torch.nn.MSELoss()
-
-        self.smoothed_event_eval_hard = 0
-        self.smoothed_event_eval_soft = 0
         
         self.lr = lr
 
@@ -120,24 +116,20 @@ class TimeSeriesTransformer(L.LightningModule):
             event_dist, intensity_proj = self.unembed(embeddings_pred[:,-1])
             next_event, next_intensity = mle(event_dist, intensity_proj)
             event_eval_hard, event_eval_soft = eval_event_pred(event_tail.numpy(), next_event.numpy())
-            self.smoothed_event_eval_hard = SMOOTHING * self.smoothed_event_eval_hard + (1 - SMOOTHING) * event_eval_hard
-            self.smoothed_event_eval_soft = SMOOTHING * self.smoothed_event_eval_soft + (1 - SMOOTHING) * event_eval_soft
-            self.log('event_eval_hard', event_eval_hard)
-            self.log('event_eval_soft', event_eval_soft)
-            self.log('smoothed_event_eval_hard', self.smoothed_event_eval_hard)
-            self.log('smoothed_event_eval_soft', self.smoothed_event_eval_soft)
+            self.log('event_eval_hard', event_eval_hard, on_step=True, on_epoch=True)
+            self.log('event_eval_soft', event_eval_soft, on_step=True, on_epoch=True)
             in_eval = eval_intensity_pred(event_tail, intensity_tail, intensity_proj)
-            self.log('intensity_eval', in_eval)
+            self.log('intensity_eval', in_eval, on_step=True, on_epoch=True)
 
         return self.loss_f(embeddings_pred, embeddings)
     
     def training_step(self, batch, batch_idx):
         events, intensities = batch
         loss = self.step(events, intensities, mode='train')
-        self.log('train_loss', loss)
+        self.log('train_loss', loss, on_step=True, on_epoch=True)
         return loss
     
     def validation_step(self, batch, batch_idx):
         events, intensities = batch
         loss = self.step(events, intensities, mode='val')
-        self.log('val_loss', loss)
+        self.log('val_loss', loss, on_step=True, on_epoch=True)

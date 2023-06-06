@@ -36,8 +36,8 @@ def train_icat(real_data, accelerator):
     initial_embedding = torch.Tensor(embed(legend, dim=DIM))
     initial_embedding = embedding_transform(intensity_stds)(initial_embedding)
 
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True, num_workers=8)
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False, num_workers=8)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
 
     model = TimeSeriesTransformer(initial_embedding, 
                                   n_heads=N_HEADS, 

@@ -11,6 +11,8 @@ N_HEADS = 3
 N_LAYERS = 3
 DIM = 15
 DIM_FEEDFORWARD = 15
+LR = 1e-3
+GRAD_CLIP_VAL = 1
 
 @click.command()
 @click.option('--real-data/--mock-data', default=True)
@@ -45,7 +47,7 @@ def train_icat(real_data, accelerator):
 
     trainer = L.Trainer(accelerator=accelerator,
                         log_every_n_steps=1,
-                        gradient_clip_val=1,
+                        gradient_clip_val=GRAD_CLIP_VAL,
                         logger=loggers.WandbLogger(project='icat', log_model=True))
     
     trainer.fit(model=model, 

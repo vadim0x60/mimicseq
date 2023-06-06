@@ -54,7 +54,8 @@ class TimeSeriesTransformer(L.LightningModule):
                                             nhead=n_heads, 
                                             dropout=dropout, 
                                             dim_feedforward=dim_feedwordard, 
-                                            layer_norm_eps=layer_norm_eps)
+                                            layer_norm_eps=layer_norm_eps,
+                                            norm_first=True)
         self.transformer = torch.nn.TransformerEncoder(encoder_layer=encoder_layer, 
                                                        num_layers=n_layers)
         self.pos = PositionalEncoding1D(event_dim)

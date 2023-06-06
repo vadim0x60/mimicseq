@@ -47,7 +47,7 @@ def train_icat(real_data, accelerator):
     trainer = L.Trainer(accelerator=accelerator,
                         logger=loggers.WandbLogger(project='icat', log_model=True),
                         log_every_n_steps=1,
-                        precision='b16-mixed')
+                        precision='bf16-mixed')
     
     trainer.fit(model=model, 
                 train_dataloaders=train_loader, 

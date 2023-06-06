@@ -103,8 +103,8 @@ class TimeSeriesTransformer(L.LightningModule):
         mask_idx = random.randint(0, seq_len - 1)
 
         if mode == 'val':
-            event_tail = events[:,mask_idx:]
-            intensity_tail = intensities[:,mask_idx:]
+            event_tail = events[:,mask_idx:].cpu().numpy()
+            intensity_tail = intensities[:,mask_idx:].cpu().numpy()
 
             events = events[:,:mask_idx+1]
             intensities = intensities[:,:mask_idx+1]
@@ -119,10 +119,12 @@ class TimeSeriesTransformer(L.LightningModule):
         if mode == 'val':
             event_dist, intensity_proj = self.unembed(embeddings_pred[:,-1])
             next_event, next_intensity = mle(event_dist, intensity_proj)
-            event_eval_hard, event_eval_soft = eval_event_pred(event_tail.numpy(), next_event.numpy())
-            self.log('event_eval_hard', event_eval_hard, on_step=True, on_epoch=True)
-            self.log('event_eval_soft', event_eval_soft, on_step=True, on_epoch=True)
-            in_eval = eval_intensity_pred(event_tail, intensity_tail, intensity_proj)
+            next_event = next_event.cpu().numpy()
+            eval_hard, eval_soft = eval_event_pred(event_tail, next_event)
+            self.log('event_eval_hard', eval_hard, on_step=True, on_epoch=True)
+            self.log('event_eval_soft', eval_soft, on_step=True, on_epoch=True)
+            in_eval = eval_intensity_pred(event_tail, intensity_tail, 
+                                          intensity_proj.cpu().numpy()))
             self.log('intensity_eval', in_eval, on_step=True, on_epoch=True)
 
         return self.loss_f(embeddings_pred, embeddings)

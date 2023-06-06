@@ -29,8 +29,11 @@ def embedding_transform(avg_intensities):
 def patient_transform(events, intensities):
     events = torch.LongTensor(events)
     intensities = torch.FloatTensor(intensities)
-    intensities = intensities.nan_to_num(1)
     return events, intensities
+
+def assert_no_nan(tensor, name='input'):
+    nan_count = tensor.isnan().sum()
+    assert nan_count == 0, f'NaNs in {name}: {nan_count}'
 
 class TimeSeriesTransformer(L.LightningModule):
     def __init__(self, token_matrix,
@@ -44,7 +47,7 @@ class TimeSeriesTransformer(L.LightningModule):
         event_dim = token_matrix.shape[1]
 
         self.embed = torch.nn.Embedding.from_pretrained(token_matrix, 
-                                                        freeze=False)
+                                                        freeze=True)
         encoder_layer = torch.nn.TransformerEncoderLayer(
                                             d_model=event_dim,
                                             nhead=n_heads, 
@@ -60,11 +63,10 @@ class TimeSeriesTransformer(L.LightningModule):
         self.smoothed_event_eval_soft = 0
 
     def forward(self, masked_events):
-        print(masked_events.isnan().sum())
-        masked_events *= torch.sqrt(torch.tensor(self.embed.weight.shape[1]))
+        assert_no_nan(masked_events, 'input')
         masked_events += self.pos(masked_events)
         events = self.transformer(masked_events)
-        print(events.isnan().sum())
+        assert_no_nan(events, 'output')
         return events
     
     def configure_optimizers(self):
@@ -78,7 +80,7 @@ class TimeSeriesTransformer(L.LightningModule):
 
     def predict(self, events, intensities):
         embeddings = self.embed(events)
-        embeddings *= intensities
+        embeddings *= intensities.nan_to_num(1)
         embeddings = torch.vstack((embeddings, self.embed(MASK_TOKEN)))
         embeddings_pred = self(events, intensities)
         return self.unembed(embeddings_pred[:,-1])
@@ -92,27 +94,20 @@ class TimeSeriesTransformer(L.LightningModule):
         mode: 'train' or 'val'
         """
 
-        print(events.isnan().sum())
-        print(intensities.isnan().sum())
-
         mask_idx = random.randint(0, intensities.shape[1] - 1)
 
         if mode == 'val':
-            print(events)
-            print(intensities)
             event_tail = events[:,mask_idx:]
             intensity_tail = intensities[:,mask_idx:]
-            print(event_tail)
-            print(intensity_tail)
 
             events = events[:,:mask_idx+1]
             intensities = intensities[:,:mask_idx+1]
 
+        intensities = intensities.nan_to_num(1)
+        assert_no_nan(self.embed.weight, 'embeding weights')
         embeddings = self.embed(events) * intensities.unsqueeze(-1)
-        print(embeddings.isnan().sum())
         masked_embeddings = embeddings.clone()
         masked_embeddings[:,mask_idx] = self.embed(MASK_TOKEN)
-        print(masked_embeddings.isnan().sum())
         embeddings_pred = self(masked_embeddings)
 
         if mode == 'val':

@@ -1,5 +1,6 @@
 from torch.utils.data import Dataset
 import pandas as pd
+import numpy as np
 
 legend = pd.DataFrame({
     'label': ['a', 'b', 'c', 'd'],
@@ -24,7 +25,9 @@ class MOCKSEQ(Dataset):
         self.transform = transform
 
     def __getitem__(self, index):
-        return self.transform(patients[self.start_idx + index], 1)
+        events = np.array(patients[self.start_idx + index])
+        intensities = np.ones_like(events)
+        return self.transform(events, intensities)
    
     def __len__(self):
         return self.end_idx - self.start_idx

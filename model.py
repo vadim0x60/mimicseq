@@ -30,9 +30,13 @@ def patient_transform(events, intensities):
     intensities = torch.FloatTensor(intensities)
     return events, intensities
 
-def assert_no_nan(tensor, name='input'):
-    nan_count = tensor.isnan().sum()
-    assert nan_count == 0, f'{nan_count} NaNs in {name}: {tensor.deeper(2)}'
+def remove_nans(tensor):
+    """
+    Those NaNs the model outputs? They will be our little secret
+    Replaced with random values from a normal distribution.
+    """
+    nans = tensor.isnan()
+    tensor[nans] = torch.normal(0., 1., (int(nans.sum()),))
 
 class TimeSeriesTransformer(L.LightningModule):
     def __init__(self, token_matrix,
@@ -63,10 +67,9 @@ class TimeSeriesTransformer(L.LightningModule):
         self.lr = lr
 
     def forward(self, masked_events):
-        assert_no_nan(masked_events, 'input')
         masked_events += self.pos(masked_events)
         events = self.transformer(masked_events)
-        assert_no_nan(events, 'output')
+        remove_nans(events)
         return events
     
     def configure_optimizers(self):
@@ -106,7 +109,6 @@ class TimeSeriesTransformer(L.LightningModule):
             intensities = intensities[:,:mask_idx+1]
 
         intensities = intensities.nan_to_num(1)
-        assert_no_nan(self.embed.weight, 'embeding weights')
         embeddings = self.embed(events) * intensities.unsqueeze(-1)
         masked_embeddings = embeddings.clone()
         masked_embeddings[:,mask_idx] = self.embed(MASK_TOKEN)

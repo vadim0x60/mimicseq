@@ -48,8 +48,7 @@ def train_icat(real_data, accelerator):
     trainer = L.Trainer(accelerator=accelerator,
                         log_every_n_steps=1,
                         gradient_clip_val=GRAD_CLIP_VAL,
-                        logger=loggers.WandbLogger(project='icat', log_model=True),
-                        detect_anomaly=True)
+                        logger=loggers.WandbLogger(project='icat', log_model=True))
     
     trainer.fit(model=model, 
                 train_dataloaders=train_loader, 

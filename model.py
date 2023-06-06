@@ -41,7 +41,8 @@ class TimeSeriesTransformer(L.LightningModule):
                  n_layers=8, 
                  dropout=0.1, 
                  dim_feedwordard=2048, 
-                 layer_norm_eps=0.00001) -> None:
+                 layer_norm_eps=0.00001,
+                 lr=1e-3,) -> None:
         super().__init__()
 
         event_dim = token_matrix.shape[1]
@@ -61,6 +62,8 @@ class TimeSeriesTransformer(L.LightningModule):
 
         self.smoothed_event_eval_hard = 0
         self.smoothed_event_eval_soft = 0
+        
+        self.lr = lr
 
     def forward(self, masked_events):
         assert_no_nan(masked_events, 'input')
@@ -70,7 +73,7 @@ class TimeSeriesTransformer(L.LightningModule):
         return events
     
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-3)
+        return torch.optim.Adam(self.parameters(), lr=self.lr)
 
     def unembed(self, token_vector):
         emb_norm = self.embed.weight / self.embed.weight.norm(dim=-1).unsqueeze(-1)
@@ -94,7 +97,9 @@ class TimeSeriesTransformer(L.LightningModule):
         mode: 'train' or 'val'
         """
 
-        mask_idx = random.randint(0, intensities.shape[1] - 1)
+        seq_len = intensities.shape[1]
+        assert events.shape[1] == seq_len
+        mask_idx = random.randint(0, seq_len - 1)
 
         if mode == 'val':
             event_tail = events[:,mask_idx:]

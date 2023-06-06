@@ -84,7 +84,7 @@ class TimeSeriesTransformer(L.LightningModule):
     def predict(self, events, intensities):
         embeddings = self.embed(events)
         embeddings *= intensities.nan_to_num(1)
-        mask_emb = self.embed(MASK_TOKEN.to(self.embed.weight))
+        mask_emb = self.embed(MASK_TOKEN.to(device=self.embed.weight.device))
         embeddings = torch.vstack((embeddings, mask_emb))
         embeddings_pred = self(events, intensities)
         return self.unembed(embeddings_pred[:,-1])
@@ -112,7 +112,7 @@ class TimeSeriesTransformer(L.LightningModule):
         intensities = intensities.nan_to_num(1)
         embeddings = self.embed(events) * intensities.unsqueeze(-1)
         masked_embeddings = embeddings.clone()
-        mask_emb = self.embed(MASK_TOKEN.to(self.embed.weight))
+        mask_emb = self.embed(MASK_TOKEN.to(device=self.embed.weight.device))
         masked_embeddings[:,mask_idx] = mask_emb
         embeddings_pred = self(masked_embeddings)
 

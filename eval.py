@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.metrics import r2_score
 
 def eval_event_pred(tails, next_event_pred):
     """
@@ -24,10 +25,22 @@ def eval_intensity_pred(event_tails, intensity_tails, pred_intensities):
 
     result = 0
 
+    event_tails = np.array(event_tails)
+    intensity_tails = np.array(intensity_tails)
+    pred_intensities = np.array(pred_intensities)
+
     for event_tail, intensity_tail, pred_int in zip(event_tails, intensity_tails, pred_intensities):
+        # Remove duplicate events
+        # When predicting, say, blood pressure, we want to predict the soonest reading
         event_tail, ids = np.unique(event_tail, return_index=True)
         intensity_tail = intensity_tail[ids]
-        intensity_forecast = pred_int[event_tail]
-        result -= (intensity_forecast - intensity_tail).norm() / intensity_tail.norm()
+        
+        # Remove events that don't have an intensity
+        no_intensity = np.isnan(intensity_tail)
+        event_tail = event_tail[~no_intensity]
+        intensity_tail = intensity_tail[~no_intensity]
 
+        intensity_forecast = pred_int[event_tail]
+        result += r2_score(intensity_tail, intensity_forecast)
+        
     return result / len(event_tails)

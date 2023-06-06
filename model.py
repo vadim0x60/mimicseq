@@ -33,7 +33,7 @@ def patient_transform(events, intensities):
 
 def assert_no_nan(tensor, name='input'):
     nan_count = tensor.isnan().sum()
-    assert nan_count == 0, f'NaNs in {name}: {nan_count}'
+    assert nan_count == 0, f'{nan_count} NaNs in {name}: {tensor.deeper(2)}'
 
 class TimeSeriesTransformer(L.LightningModule):
     def __init__(self, token_matrix,
@@ -134,7 +134,7 @@ class TimeSeriesTransformer(L.LightningModule):
         events, intensities = batch
         loss = self.step(events, intensities, mode='train')
         self.log('train_loss', loss)
-        return loss
+        return loss.clip(-1000, 1000)
     
     def validation_step(self, batch, batch_idx):
         events, intensities = batch

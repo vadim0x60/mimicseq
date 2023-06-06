@@ -48,7 +48,7 @@ def embed(legend, dim=16, batch_size=100):
         pca = PCA(n_components=dim)
         embedding = pca.fit_transform(initial_embedding)
         np.save('embedding.npy', embedding)
-        return embedding
+    return embedding
 
 if __name__ == '__main__':
     from data import load_mimicseq

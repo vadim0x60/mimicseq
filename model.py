@@ -135,7 +135,7 @@ class TimeSeriesTransformer(L.LightningModule):
         events, intensities = batch
         loss = self.step(events, intensities, mode='train')
         self.log('train_loss', loss)
-        return loss.clip(-1000, 1000)
+        return loss
     
     def validation_step(self, batch, batch_idx):
         events, intensities = batch

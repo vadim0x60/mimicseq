@@ -17,7 +17,8 @@ GRAD_CLIP_VAL = 0.25
 @click.command()
 @click.option('--real-data/--mock-data', default=True)
 @click.option('--accelerator', default='auto')
-def train_icat(real_data, accelerator):
+@click.option('--slurm', is_flag=True)
+def train_icat(real_data, accelerator, slurm):
     if real_data:
         dataset = data
         from initemb import embed
@@ -44,11 +45,20 @@ def train_icat(real_data, accelerator):
                                   n_heads=N_HEADS, 
                                   n_layers=N_LAYERS, 
                                   dim_feedwordard=DIM_FEEDFORWARD)
+    
+    trainer_opts = {
+        'accelerator': accelerator,
+        'log_every_n_steps': 1,
+        'gradient_clip_val': GRAD_CLIP_VAL,
+        'logger': loggers.WandbLogger(project='icat', log_model=True)
+    }
 
-    trainer = L.Trainer(accelerator=accelerator,
-                        log_every_n_steps=1,
-                        gradient_clip_val=GRAD_CLIP_VAL,
-                        logger=loggers.WandbLogger(project='icat', log_model=True))
+    if slurm:
+        trainer_opts['devices'] = 2
+        trainer_opts['num_nodes'] = 1
+        trainer_opts['strategy'] = 'ddp'
+
+    trainer = L.Trainer(**trainer_opts)
     
     trainer.fit(model=model, 
                 train_dataloaders=train_loader, 

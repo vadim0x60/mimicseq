@@ -36,7 +36,7 @@ def remove_nans(tensor):
     Replaced with random values from a normal distribution.
     """
     nans = tensor.isnan()
-    tensor[nans] = torch.normal(0., 1., (int(nans.sum()),))
+    tensor[nans] = torch.normal(0., 1., (int(nans.sum()),)).to(tensor)
 
 class TimeSeriesTransformer(L.LightningModule):
     def __init__(self, token_matrix,

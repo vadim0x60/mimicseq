@@ -41,7 +41,7 @@ class TimeSeriesTransformer(L.LightningModule):
                  n_layers=8, 
                  dropout=0.1, 
                  dim_feedwordard=2048, 
-                 layer_norm_eps=0.00001,
+                 layer_norm_eps=0.0001,
                  lr=1e-3,) -> None:
         super().__init__()
 

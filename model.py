@@ -40,7 +40,7 @@ class TimeSeriesTransformer(L.LightningModule):
     def __init__(self, token_matrix,
                  n_heads=8,
                  n_layers=8, 
-                 dropout=0.0, 
+                 dropout=0.1, 
                  dim_feedwordard=2048, 
                  layer_norm_eps=0.0001,
                  lr=1e-3,) -> None:

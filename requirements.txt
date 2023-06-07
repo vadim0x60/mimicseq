@@ -7,5 +7,4 @@ positional-encodings[pytorch]~=6.0
 tenacity~=8.0
 click~=8.1
 lightning~=2.0
-evestop~=1.1
 lovely_tensors~=0.1

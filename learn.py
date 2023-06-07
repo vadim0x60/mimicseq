@@ -38,8 +38,16 @@ def train_icat(real_data, accelerator, slurm):
     initial_embedding = torch.Tensor(embed(legend, dim=DIM))
     initial_embedding = embedding_transform(intensity_means)(initial_embedding)
 
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
+    train_loader = torch.utils.data.DataLoader(train_data, 
+                                               batch_size=1, 
+                                               shuffle=True, 
+                                               num_workers=12, 
+                                               prefetch_factor=256)
+    test_loader = torch.utils.data.DataLoader(test_data, 
+                                              batch_size=1, 
+                                              shuffle=False, 
+                                              num_workers=2, 
+                                              prefetch_factor=16)
 
     model = TimeSeriesTransformer(initial_embedding, 
                                   n_heads=N_HEADS, 
@@ -50,7 +58,8 @@ def train_icat(real_data, accelerator, slurm):
         'accelerator': accelerator,
         'log_every_n_steps': 1,
         'gradient_clip_val': GRAD_CLIP_VAL,
-        'logger': loggers.WandbLogger(project='icat', log_model=True)
+        'logger': loggers.WandbLogger(project='icat', log_model=True),
+        'val_check_interval': 1024,
     }
 
     if slurm:

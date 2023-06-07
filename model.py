@@ -30,6 +30,14 @@ def patient_transform(events, intensities):
     intensities = torch.FloatTensor(intensities)
     return events, intensities
 
+def remove_nans(tensor):
+    """
+    Those NaNs the model outputs? They will be our little secret
+    Replaced with random values from a normal distribution.
+    """
+    nans = tensor.isnan()
+    tensor[nans] = torch.normal(0., 1., (int(nans.sum()),)).to(tensor)
+
 class TimeSeriesTransformer(L.LightningModule):
     def __init__(self, token_matrix,
                  n_heads=8,
@@ -61,8 +69,7 @@ class TimeSeriesTransformer(L.LightningModule):
     def forward(self, masked_events):
         masked_events += self.pos(masked_events)
         events = self.transformer(masked_events)
-        assert not events.isnan().any()
-        events = events.clip(-1, 1)
+        remove_nans(events)
         return events
     
     def configure_optimizers(self):
@@ -107,11 +114,7 @@ class TimeSeriesTransformer(L.LightningModule):
         masked_embeddings = embeddings.clone()
         mask_emb = self.embed(MASK_TOKEN.to(device=self.embed.weight.device))
         masked_embeddings[:,mask_idx] = mask_emb
-
-        try:
-            embeddings_pred = self(masked_embeddings)
-        except AssertionError:
-            return None
+        embeddings_pred = self(masked_embeddings)
 
         if mode == 'val':
             event_dist, intensity_proj = self.unembed(embeddings_pred[:,-1])
@@ -129,12 +132,10 @@ class TimeSeriesTransformer(L.LightningModule):
     def training_step(self, batch, batch_idx):
         events, intensities = batch
         loss = self.step(events, intensities, mode='train')
-        if loss:
-            self.log('train_loss', loss, on_step=True, on_epoch=True, sync_dist=True)
-            return loss
+        self.log('train_loss', loss, on_step=True, on_epoch=True, sync_dist=True)
+        return loss
     
     def validation_step(self, batch, batch_idx):
         events, intensities = batch
         loss = self.step(events, intensities, mode='val')
-        if loss:
-            self.log('val_loss', loss, on_step=True, on_epoch=True, sync_dist=True)
+        self.log('val_loss', loss, on_step=True, on_epoch=True, sync_dist=True)

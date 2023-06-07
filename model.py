@@ -121,21 +121,21 @@ class TimeSeriesTransformer(L.LightningModule):
             next_event, next_intensity = mle(event_dist, intensity_proj)
             next_event = next_event.cpu().numpy()
             eval_hard, eval_soft = eval_event_pred(event_tail, next_event)
-            self.log('event_eval_hard', eval_hard, on_step=True, on_epoch=True)
-            self.log('event_eval_soft', eval_soft, on_step=True, on_epoch=True)
+            self.log('event_eval_hard', eval_hard, on_step=True, on_epoch=True, sync_dist=True)
+            self.log('event_eval_soft', eval_soft, on_step=True, on_epoch=True, sync_dist=True)
             in_eval = eval_intensity_pred(event_tail, intensity_tail, 
-                                          intensity_proj.cpu().numpy()))
-            self.log('intensity_eval', in_eval, on_step=True, on_epoch=True)
+                                          intensity_proj.cpu().numpy())
+            self.log('intensity_eval', in_eval, on_step=True, on_epoch=True, sync_dist=True)
 
         return self.loss_f(embeddings_pred, embeddings)
     
     def training_step(self, batch, batch_idx):
         events, intensities = batch
         loss = self.step(events, intensities, mode='train')
-        self.log('train_loss', loss, on_step=True, on_epoch=True)
+        self.log('train_loss', loss, on_step=True, on_epoch=True, sync_dist=True)
         return loss
     
     def validation_step(self, batch, batch_idx):
         events, intensities = batch
         loss = self.step(events, intensities, mode='val')
-        self.log('val_loss', loss, on_step=True, on_epoch=True)
+        self.log('val_loss', loss, on_step=True, on_epoch=True, sync_dist=True)

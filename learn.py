@@ -1,7 +1,7 @@
 from model import TimeSeriesTransformer, embedding_transform, patient_transform
 import torch
 import lightning as L
-from pytorch_lightning import loggers
+from lightning.pytorch import loggers, callbacks
 import click
 
 import data
@@ -60,6 +60,7 @@ def train_icat(real_data, accelerator, slurm):
         'gradient_clip_val': GRAD_CLIP_VAL,
         'logger': loggers.WandbLogger(project='icat', log_model=True),
         'val_check_interval': 1024,
+        'callbacks': [callbacks.ModelCheckpoint(monitor='val_loss',mode='min')]
     }
 
     if slurm:

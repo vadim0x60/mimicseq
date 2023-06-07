@@ -15,20 +15,18 @@ def mle(event_dist, intensities):
     top = event_dist.argmin(dim=-1)
     return top, intensities[:,top]
 
-def embedding_transform(avg_intensities):
-    avg_intensities = torch.FloatTensor(avg_intensities)
-    avg_intensities = avg_intensities.nan_to_num(1)
+class PatientTransform():
+    def __init__(self, intensity_means, intensity_stds):
+        self.intensity_means = torch.FloatTensor(intensity_means)
+        self.intensity_stds = torch.FloatTensor(intensity_stds)
 
-    def transform(embeddings):
-        embeddings = torch.FloatTensor(embeddings)
-        means = torch.FloatTensor(avg_intensities)
-        return embeddings / means.unsqueeze(1)
-    return transform
-
-def patient_transform(events, intensities):
-    events = torch.LongTensor(events)
-    intensities = torch.FloatTensor(intensities)
-    return events, intensities
+    def __call__(self, events, intensities):
+        events = torch.LongTensor(events)
+        intensities = torch.FloatTensor(intensities)
+        means = self.intensity_means[events]
+        stds = self.intensity_stds[events]
+        intensities = torch.nn.functional.sigmoid((intensities - means) / stds)
+        return events, intensities
 
 def remove_nans(tensor):
     """

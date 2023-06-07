@@ -1,4 +1,4 @@
-from model import TimeSeriesTransformer, embedding_transform, patient_transform
+from model import TimeSeriesTransformer, PatientTransform
 import torch
 import lightning as L
 from lightning.pytorch import loggers, callbacks
@@ -29,14 +29,14 @@ def train_icat(real_data, accelerator, slurm):
     legend = dataset.load_legend()
 
     # the first intensity is for the [MASK] token
-    intensity_means = [1] + legend['intensity_mean'].tolist()
-    intensity_stds = torch.Tensor([1] + legend['intensity_std'].tolist())
+    intensity_means = [float('nan')] + legend['intensity_mean'].tolist()
+    intensity_stds = torch.Tensor([float('nan')] + legend['intensity_std'].tolist())
 
-    train_data = dataset.load_train(patient_transform)
-    test_data = dataset.load_test(patient_transform)
+    pt = PatientTransform(intensity_means, intensity_stds)
+    train_data = dataset.load_train(pt)
+    test_data = dataset.load_test(pt)
 
     initial_embedding = torch.Tensor(embed(legend, dim=DIM))
-    initial_embedding = embedding_transform(intensity_means)(initial_embedding)
 
     train_loader = torch.utils.data.DataLoader(train_data, 
                                                batch_size=1, 

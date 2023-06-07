@@ -59,7 +59,6 @@ def train_icat(real_data, accelerator, slurm):
         'log_every_n_steps': 1,
         'gradient_clip_val': GRAD_CLIP_VAL,
         'logger': loggers.WandbLogger(project='icat', log_model=True),
-        'val_check_interval': 1024,
         'callbacks': [callbacks.ModelCheckpoint(monitor='val_loss',mode='min')]
     }
 

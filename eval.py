@@ -40,6 +40,9 @@ def eval_intensity_pred(event_tails, intensity_tails, pred_intensities):
         event_tail = event_tail[~no_intensity]
         intensity_tail = intensity_tail[~no_intensity]
 
+        if len(event_tail) == 0:
+            continue
+
         intensity_forecast = pred_int[event_tail]
         result += r2_score(intensity_tail, intensity_forecast)
         

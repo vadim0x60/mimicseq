@@ -4,6 +4,7 @@ from torch.utils.data import SequentialSampler, DataLoader
 import lightning as L
 from lightning.pytorch import loggers, callbacks
 import click
+import tenacity
 
 import data
 import mock
@@ -19,6 +20,8 @@ GRAD_CLIP_VAL = 0.25
 @click.option('--real-data/--mock-data', default=True)
 @click.option('--accelerator', default='auto')
 @click.option('--slurm', is_flag=True)
+@tenacity.retry(stop=tenacity.stop_after_attempt(3),
+                retry=tenacity.retry_if_exception_type(RuntimeError))
 def train_icat(real_data, accelerator, slurm):
     if real_data:
         dataset = data

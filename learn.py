@@ -73,10 +73,15 @@ def train_icat(real_data, accelerator, slurm):
 
     trainer = L.Trainer(**trainer_opts)
     
-    trainer.fit(model=model, 
-                train_dataloaders=train_loader, 
-                val_dataloaders=test_loader,
-                ckpt_path='latest')
+    try:
+        trainer.fit(model=model, 
+                    train_dataloaders=train_loader, 
+                    val_dataloaders=test_loader,
+                    ckpt_path='latest')
+    except FileNotFoundError:
+        trainer.fit(model=model, 
+                    train_dataloaders=train_loader, 
+                    val_dataloaders=test_loader)
 
 if __name__ == '__main__':
     import lovely_tensors as lt

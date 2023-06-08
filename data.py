@@ -19,8 +19,9 @@ class BatchSamplerForPaddingHaters(Sampler):
             cur_len = l
 
     def __iter__(self):
+        sampler_iter = iter(self.sampler)
         for bs in self.batch_sizes:
-            yield [next(self.sampler) for _ in range(bs)]
+            yield [next(sampler_iter) for _ in range(bs)]
 
     def __len__(self):
         return len(self.batch_sizes)

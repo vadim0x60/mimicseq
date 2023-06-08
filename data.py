@@ -1,12 +1,35 @@
 from google.cloud import bigquery
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Sampler
 
 client = bigquery.Client(project='graphsim')
 
+class BatchSamplerForPaddingHaters(Sampler):
+    def __init__(self, lengths, sampler):
+        self.sampler = sampler
+        self.lengths = lengths
+        self.batch_sizes = []
+
+        cur_len = lengths[0]
+        cur_bs = 0
+        for l in lengths:
+            if l != cur_len:
+                self.batch_sizes.append(cur_bs)
+                cur_bs = 0
+            cur_bs += 1
+            cur_len = l
+
+    def __iter__(self):
+        for bs in self.batch_sizes:
+            yield [next(self.sampler) for _ in range(bs)]
+
+    def __len__(self):
+        return len(self.batch_sizes)
+
 class MIMICSEQ(Dataset):
-    def __init__(self, hadm_ids, 
+    def __init__(self, hadm_ids, lengths,
                  transform=lambda x: x):
         self.hadm_ids = hadm_ids
+        self.lengths = lengths
         self.transform = transform
 
     def __getitem__(self, index):
@@ -24,9 +47,10 @@ class MIMICSEQ(Dataset):
         return len(self.hadm_ids)
 
 def load_fold(fold, *args, **kwargs):
-    hadm_ids = client.query(f'SELECT * FROM graphsim.mimic.folds WHERE fold = "{fold}"')
-    hadm_ids = hadm_ids.to_dataframe()['hadm_id'].tolist()
-    return MIMICSEQ(hadm_ids, *args, **kwargs)
+    q = f'SELECT * FROM graphsim.mimic.folds WHERE fold = "{fold}" ORDER BY len'
+    folds = client.query(q).to_dataframe()
+
+    return MIMICSEQ(folds['hadm_id'].tolist(), folds['len'].tolist(), *args, **kwargs)
 
 def load_train(transform=lambda x: x):
     return load_fold('train', transform)

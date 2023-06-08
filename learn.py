@@ -1,5 +1,6 @@
 from model import TimeSeriesTransformer, PatientTransform
 import torch
+from torch.utils.data import SequentialSampler, DataLoader
 import lightning as L
 from lightning.pytorch import loggers, callbacks
 import click
@@ -38,16 +39,19 @@ def train_icat(real_data, accelerator, slurm):
 
     initial_embedding = torch.Tensor(embed(legend, dim=DIM))
 
-    train_loader = torch.utils.data.DataLoader(train_data, 
-                                               batch_size=1, 
-                                               shuffle=True, 
-                                               num_workers=12, 
-                                               prefetch_factor=256)
-    test_loader = torch.utils.data.DataLoader(test_data, 
-                                              batch_size=1, 
-                                              shuffle=False, 
-                                              num_workers=2, 
-                                              prefetch_factor=16)
+    train_sampler = data.BatchSamplerForPaddingHaters(train_data.lengths, 
+                                                      SequentialSampler(train_data))
+    train_loader = DataLoader(train_data,   
+                    num_workers=12, 
+                    prefetch_factor=256,
+                    batch_sampler=train_sampler)
+    test_sampler = data.BatchSamplerForPaddingHaters(test_data.lengths,
+                                                     SequentialSampler(test_data))
+    test_loader = DataLoader(test_data, 
+                             batch_size=1, 
+                             num_workers=2, 
+                             prefetch_factor=16,
+                             batch_sampler=test_sampler)
 
     model = TimeSeriesTransformer(initial_embedding, 
                                   n_heads=N_HEADS, 

@@ -71,7 +71,8 @@ def train_icat(real_data, accelerator, slurm):
     
     trainer.fit(model=model, 
                 train_dataloaders=train_loader, 
-                val_dataloaders=test_loader)
+                val_dataloaders=test_loader,
+                ckpt_path='latest')
 
 if __name__ == '__main__':
     import lovely_tensors as lt

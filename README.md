@@ -8,11 +8,9 @@ A benchmark for foundation models in Intensive Care.
 - Go to your profile settings on PhysioNet, select the “Cloud” tab and specify your Google account.
 - [Download the data from here](https://console.cloud.google.com/storage/browser/mimicseq).
 
-## Understand
-
-## Train your model
-
 ## Evaluate your model
+
+See `example.py`
 
 ## Re-create our dataset
 

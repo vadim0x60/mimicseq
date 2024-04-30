@@ -2,7 +2,7 @@
 
 ## Understand
 
-MIMIC-SEQ is a benchmark for foundation models in Intensive Care, representing the journey of an intensive care patient as a sequence of event tokens with optional event intensity markers designed to make it easy to train sequence models (Transformers, etc.). See [the paper](https://vadim.me/publications/mimicseq) for more details.
+MIMIC-Ext-SEQ is a benchmark for foundation models in Intensive Care, representing the journey of an intensive care patient as a sequence of event tokens with optional event intensity markers designed to make it easy to train sequence models (Transformers, etc.). See [the paper](https://vadim.me/publications/mimicseq) for more details.
 
 ## Get access
 

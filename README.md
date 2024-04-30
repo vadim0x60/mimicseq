@@ -2,7 +2,7 @@
 
 ## Understand
 
-MIMIC-Ext-SEQ is a benchmark for foundation models in Intensive Care, representing the journey of an intensive care patient as a sequence of event tokens with optional event intensity markers designed to make it easy to train sequence models (Transformers, etc.). See [the paper](https://vadim.me/publications/mimicseq) for more details.
+MIMIC-IV-Ext-SEQ is a benchmark for foundation models in Intensive Care, representing the journey of an intensive care patient as a sequence of event tokens with optional event intensity markers designed to make it easy to train sequence models (Transformers, etc.). See [the paper](https://vadim.me/publications/mimicseq) for more details.
 
 ## Get access
 
@@ -16,4 +16,4 @@ See `example.py`
 
 ## Re-create our dataset
 
-`reproduce` directory contains the Google BigQuery SQL requests that we ran on MIMIC IV database to create our dataset. It is not required to use MIMIC-SEQ, but included for transparency and reproducibility.
+`reproduce` directory contains the Google BigQuery SQL requests that we ran on MIMIC IV database to create our dataset. It is not required to use MIMIC-IV-Ext-SEQ, but included for transparency and reproducibility.
